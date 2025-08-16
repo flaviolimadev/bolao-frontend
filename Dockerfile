@@ -30,6 +30,10 @@ RUN echo "🔧 Iniciando build com VITE_API_URL: $VITE_API_URL" && \
 # Stage de produção
 FROM nginx:alpine AS production
 
+# Permitir fallback do valor também no estágio de produção
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Instalar wget e envsubst para injetar env em runtime
 RUN apk add --no-cache wget gettext
 
