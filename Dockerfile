@@ -43,8 +43,19 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY public/env.js /usr/share/nginx/html/env.js.tpl
 
 # Entry-point para substituir variável no env.js na inicialização
-RUN printf '#!/bin/sh\n\n: "${VITE_API_URL:=}"\nif [ -f /usr/share/nginx/html/env.js.tpl ]; then\\n  envsubst "${VITE_API_URL}" < /usr/share/nginx/html/env.js.tpl > /usr/share/nginx/html/env.js;\\nfi\\nexec nginx -g "daemon off;"\n' > /docker-entrypoint.d/99-env.sh && \
-    chmod +x /docker-entrypoint.d/99-env.sh
+RUN cat > /docker-entrypoint.d/99-env.sh << 'EOF' \
+&& chmod +x /docker-entrypoint.d/99-env.sh
+#!/bin/sh
+set -e
+
+# Garante VITE_API_URL (pode estar vazia)
+: "${VITE_API_URL:=}"
+
+# Se existir o template, gera o env.js final com a variável
+if [ -f /usr/share/nginx/html/env.js.tpl ]; then
+  envsubst '${VITE_API_URL}' < /usr/share/nginx/html/env.js.tpl > /usr/share/nginx/html/env.js
+fi
+EOF
 
 # Expor porta 82
 EXPOSE 82
