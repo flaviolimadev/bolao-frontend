@@ -11,9 +11,15 @@ export default defineConfig(({ mode }) => {
                  process.env.VITE_API_BASE_URL || 
                  '';
   
+  // 🔧 Logs de debug mais visíveis
+  console.log('='.repeat(50));
+  console.log('🔧 BUILD DEBUG INFO');
+  console.log('='.repeat(50));
   console.log('🔧 VITE_API_URL durante build:', apiUrl);
   console.log('🔧 process.env.VITE_API_URL:', process.env.VITE_API_URL);
   console.log('🔧 process.env.VITE_API_BASE_URL:', process.env.VITE_API_BASE_URL);
+  console.log('🔧 process.env keys:', Object.keys(process.env).filter(key => key.includes('VITE')));
+  console.log('='.repeat(50));
   
   return {
     server: {
