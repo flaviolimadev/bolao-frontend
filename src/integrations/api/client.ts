@@ -3,20 +3,23 @@ HTTP client simples para integrar com o backend.
 Lê a base URL de import.meta.env.VITE_API_URL e faz fallback silencioso quando não definido.
 */
 
+import { API_URL as STATIC_API_URL } from "@/lib/api";
+
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-const RAW_API_BASE_URL = ((import.meta as any)?.env?.VITE_API_URL ?? undefined) as string | undefined
+// Preferir a constante estática gerada em build; fallback para env dinâmico e, por fim, localStorage
+const ENV_API_BASE_URL = ((import.meta as any)?.env?.VITE_API_URL ?? undefined) as string | undefined
 // Fallback opcional via localStorage para facilitar debug quando .env não é lido
 let RUNTIME_BASE_URL: string | undefined
 try { RUNTIME_BASE_URL = (typeof localStorage !== 'undefined' ? localStorage.getItem('API_BASE_URL') : null) || undefined } catch {}
 
-const API_BASE_URL: string | undefined = (RAW_API_BASE_URL && RAW_API_BASE_URL.trim() !== ''
-  ? RAW_API_BASE_URL.trim()
-  : (RUNTIME_BASE_URL && RUNTIME_BASE_URL.trim() !== '' ? RUNTIME_BASE_URL.trim() : undefined))
+const API_BASE_URL: string | undefined = [STATIC_API_URL, ENV_API_BASE_URL, RUNTIME_BASE_URL]
+  .map(v => (typeof v === 'string' ? v.trim() : undefined))
+  .find(v => !!v)
 
 // Debug: log base URL uma única vez no load do módulo
 // eslint-disable-next-line no-console
-console.debug('[API] Base URL =', API_BASE_URL, '(env:', RAW_API_BASE_URL, 'ls:', RUNTIME_BASE_URL, ')')
+console.debug('[API] Base URL =', API_BASE_URL, '(static:', STATIC_API_URL, 'env:', ENV_API_BASE_URL, 'ls:', RUNTIME_BASE_URL, ')')
 
 function buildUrl(path: string, params?: Record<string, unknown>): string {
   const base = (API_BASE_URL || '').replace(/\/$/, '')
