@@ -1,55 +1,47 @@
+# Build stage
 FROM node:18-alpine AS build
+
+# Receber variável
+ARG VITE_API_URL
+
+# Debug
+RUN echo "🔧 VITE_API_URL recebido: $VITE_API_URL"
 
 WORKDIR /app
 
-# Declarar as variáveis de ambiente como argumentos de build
-ARG VITE_API_URL
-ARG VITE_NODE_ENV
-
-# Debug: mostrar valores recebidos
-RUN echo "🔧 VITE_API_URL: $VITE_API_URL"
-RUN echo "🔧 VITE_NODE_ENV: $VITE_NODE_ENV"
-
-# Tornar as variáveis disponíveis durante o build
-ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_NODE_ENV=$VITE_NODE_ENV
-
+# Instalar dependências
 COPY package*.json ./
 RUN npm install
+
+# Copiar código
 COPY . .
 
-# Build com variáveis explícitas
+# Build com variável
 RUN VITE_API_URL="$VITE_API_URL" npm run build
 
+# Production stage
 FROM nginx:alpine
 
-# Instalar gettext para envsubst
-RUN apk add --no-cache gettext
-
-# Remover configuração padrão
-RUN rm /etc/nginx/conf.d/default.conf
-
-# Copiar nossa configuração simples
-COPY nginx-simple.conf /etc/nginx/conf.d/default.conf
-
+# Copiar build
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copiar template env.js
+# Copiar nginx config
+COPY nginx-simple.conf /etc/nginx/conf.d/default.conf
+
+# Copiar env.js template
 COPY public/env.js /usr/share/nginx/html/env.js.tpl
 
-# Definir variável no container de produção
+# Definir variável no container
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
-# Script de inicialização para gerar env.js
+# Script simples para gerar env.js
 RUN echo '#!/bin/sh' > /docker-entrypoint.d/99-env.sh && \
-    echo 'envsubst "$VITE_API_URL" < /usr/share/nginx/html/env.js.tpl > /usr/share/nginx/html/env.js' >> /docker-entrypoint.d/99-env.sh && \
+    echo 'if [ -n "$VITE_API_URL" ]; then' >> /docker-entrypoint.d/99-env.sh && \
+    echo '  sed "s|\\${VITE_API_URL}|$VITE_API_URL|g" /usr/share/nginx/html/env.js.tpl > /usr/share/nginx/html/env.js' >> /docker-entrypoint.d/99-env.sh && \
+    echo 'fi' >> /docker-entrypoint.d/99-env.sh && \
     chmod +x /docker-entrypoint.d/99-env.sh
 
 EXPOSE 82
-
-# Health check usando o endpoint /health
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:82/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

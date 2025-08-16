@@ -68,9 +68,6 @@ jspm_packages/
 # Nuxt.js build / generate output
 .nuxt
 
-# Gatsby files
-.cache/
-
 # Storybook build outputs
 .out
 .storybook-out
@@ -98,11 +95,6 @@ Thumbs.db
 # Git
 .git
 .gitignore
-
-# Docker
-Dockerfile
-.dockerignore
-docker-compose*.yml
 
 # Coolify
 .coolify
