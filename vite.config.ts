@@ -19,9 +19,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // 🔧 ADICIONAR CONFIGURAÇÃO PARA VARIÁVEIS DE AMBIENTE
+  // 🔧 CONFIGURAÇÃO PARA VARIÁVEIS DE AMBIENTE
   define: {
     'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL),
   },
 }));

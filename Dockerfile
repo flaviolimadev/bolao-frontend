@@ -1,9 +1,8 @@
 # Multi-stage build para otimização
 FROM node:18-alpine AS builder
 
-# 🔧 ADICIONAR ARGs para variáveis de ambiente
+# 🔧 ARGs para variáveis de ambiente
 ARG VITE_API_URL
-ARG VITE_API_BASE_URL
 
 # Definir diretório de trabalho
 WORKDIR /app
@@ -19,7 +18,7 @@ RUN npm ci
 COPY . .
 
 # 🔧 Build da aplicação com variáveis de ambiente
-RUN VITE_API_URL=$VITE_API_URL VITE_API_BASE_URL=$VITE_API_BASE_URL npm run build
+RUN VITE_API_URL=$VITE_API_URL npm run build
 
 # Stage de produção
 FROM nginx:alpine AS production

@@ -1,11 +1,11 @@
 /*
 HTTP client simples para integrar com o backend.
-Lê a base URL de import.meta.env.VITE_API_BASE_URL e faz fallback silencioso quando não definido.
+Lê a base URL de import.meta.env.VITE_API_URL e faz fallback silencioso quando não definido.
 */
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-const RAW_API_BASE_URL = ((import.meta as any)?.env?.VITE_API_BASE_URL ?? undefined) as string | undefined
+const RAW_API_BASE_URL = ((import.meta as any)?.env?.VITE_API_URL ?? undefined) as string | undefined
 // Fallback opcional via localStorage para facilitar debug quando .env não é lido
 let RUNTIME_BASE_URL: string | undefined
 try { RUNTIME_BASE_URL = (typeof localStorage !== 'undefined' ? localStorage.getItem('API_BASE_URL') : null) || undefined } catch {}
@@ -42,7 +42,7 @@ async function request<T>(method: HttpMethod, path: string, options?: {
   signal?: AbortSignal
 }): Promise<T> {
   if (!API_BASE_URL) {
-    throw new Error('VITE_API_BASE_URL não configurado no ambiente (.env)')
+    throw new Error('VITE_API_URL não configurado no ambiente (.env)')
   }
 
   const { params, body, headers, signal } = options || {}
