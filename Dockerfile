@@ -30,14 +30,21 @@ RUN echo "🔧 Iniciando build com VITE_API_URL: $VITE_API_URL" && \
 # Stage de produção
 FROM nginx:alpine AS production
 
-# Instalar wget para health check
-RUN apk add --no-cache wget
+# Instalar wget e envsubst para injetar env em runtime
+RUN apk add --no-cache wget gettext
 
 # Copiar build da aplicação
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copiar configuração customizada do nginx
 COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copiar env.js template e processar com envsubst em runtime de container
+COPY public/env.js /usr/share/nginx/html/env.js.tpl
+
+# Entry-point para substituir variável no env.js na inicialização
+RUN printf '#!/bin/sh\n\n: "${VITE_API_URL:=}"\nif [ -f /usr/share/nginx/html/env.js.tpl ]; then\\n  envsubst "${VITE_API_URL}" < /usr/share/nginx/html/env.js.tpl > /usr/share/nginx/html/env.js;\\nfi\\nexec nginx -g "daemon off;"\n' > /docker-entrypoint.d/99-env.sh && \
+    chmod +x /docker-entrypoint.d/99-env.sh
 
 # Expor porta 82
 EXPOSE 82
