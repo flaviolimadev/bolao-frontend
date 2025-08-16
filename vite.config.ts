@@ -6,9 +6,14 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // 🔧 GARANTIR QUE A VARIÁVEL SEJA LIDA CORRETAMENTE
-  const apiUrl = process.env.VITE_API_URL || '';
+  // Usar múltiplas fontes para garantir que funcione
+  const apiUrl = process.env.VITE_API_URL || 
+                 process.env.VITE_API_BASE_URL || 
+                 '';
   
   console.log('🔧 VITE_API_URL durante build:', apiUrl);
+  console.log('🔧 process.env.VITE_API_URL:', process.env.VITE_API_URL);
+  console.log('🔧 process.env.VITE_API_BASE_URL:', process.env.VITE_API_BASE_URL);
   
   return {
     server: {
@@ -28,6 +33,7 @@ export default defineConfig(({ mode }) => {
     // 🔧 CONFIGURAÇÃO PARA VARIÁVEIS DE AMBIENTE
     define: {
       'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiUrl), // Fallback para compatibilidade
     },
   };
 });
