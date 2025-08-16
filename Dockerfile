@@ -22,6 +22,9 @@ RUN VITE_API_URL="$VITE_API_URL" npm run build
 # Production stage
 FROM nginx:alpine
 
+# Instalar wget para health check
+RUN apk add --no-cache wget
+
 # Copiar build
 COPY --from=build /app/dist /usr/share/nginx/html
 
@@ -43,5 +46,9 @@ RUN echo '#!/bin/sh' > /docker-entrypoint.d/99-env.sh && \
     chmod +x /docker-entrypoint.d/99-env.sh
 
 EXPOSE 82
+
+# Health check que funciona no Coolify
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:82/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
