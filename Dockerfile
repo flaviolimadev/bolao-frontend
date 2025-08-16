@@ -7,6 +7,9 @@ ARG VITE_API_URL
 # Definir diretório de trabalho
 WORKDIR /app
 
+# 🔧 Debug: mostrar valor da variável
+RUN echo "🔧 VITE_API_URL recebido: $VITE_API_URL"
+
 # Copiar arquivos de dependências
 COPY package*.json ./
 COPY bun.lockb ./
@@ -18,7 +21,8 @@ RUN npm ci
 COPY . .
 
 # 🔧 Build da aplicação com variáveis de ambiente
-RUN VITE_API_URL=$VITE_API_URL npm run build
+RUN echo "🔧 Iniciando build com VITE_API_URL: $VITE_API_URL" && \
+    VITE_API_URL="$VITE_API_URL" npm run build
 
 # Stage de produção
 FROM nginx:alpine AS production
