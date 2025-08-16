@@ -48,8 +48,8 @@ RUN echo '#!/bin/sh' > /docker-entrypoint.d/99-env.sh && \
 
 EXPOSE 82
 
-# Health check simples que funciona no Coolify
+# Health check usando o endpoint /health
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:82/ || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:82/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
