@@ -26,7 +26,7 @@ export default function ResetPassword() {
   const handleRequest = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!api.isEnabled()) {
-      toast({ title: "Indisponível", description: "Configure VITE_API_BASE_URL para usar este recurso", variant: "destructive" })
+      toast({ title: "Indisponível", description: "Configure VITE_API_URL para usar este recurso", variant: "destructive" })
       return
     }
     setLoading(true)
@@ -48,7 +48,7 @@ export default function ResetPassword() {
       return
     }
     if (!api.isEnabled()) {
-      toast({ title: "Indisponível", description: "Configure VITE_API_BASE_URL para usar este recurso", variant: "destructive" })
+      toast({ title: "Indisponível", description: "Configure VITE_API_URL para usar este recurso", variant: "destructive" })
       return
     }
     setLoading(true)

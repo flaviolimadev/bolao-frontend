@@ -19,7 +19,7 @@ export default function VerifyAccount() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!api.isEnabled()) {
-      toast({ title: "Indisponível", description: "Configure VITE_API_BASE_URL para usar este recurso", variant: "destructive" })
+      toast({ title: "Indisponível", description: "Configure VITE_API_URL para usar este recurso", variant: "destructive" })
       return
     }
     if (!userId || !code) {

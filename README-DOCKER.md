@@ -30,6 +30,11 @@ projeto-react/
 # Multi-stage build para otimização
 FROM node:18-alpine AS builder
 
+# 🔧 ARGs para variáveis de ambiente (IMPORTANTE!)
+ARG VITE_API_URL
+ARG VITE_API_BASE_URL
+# Adicione outras variáveis conforme necessário
+
 # Definir diretório de trabalho
 WORKDIR /app
 
@@ -47,10 +52,10 @@ RUN npm ci
 # Copiar código fonte
 COPY . .
 
-# Build da aplicação
-RUN npm run build
-# RUN yarn build  # Se usar Yarn
-# RUN pnpm build  # Se usar pnpm
+# 🔧 Build da aplicação COM variáveis de ambiente
+RUN VITE_API_URL=$VITE_API_URL VITE_API_BASE_URL=$VITE_API_BASE_URL npm run build
+# RUN VITE_API_URL=$VITE_API_URL VITE_API_BASE_URL=$VITE_API_BASE_URL yarn build  # Se usar Yarn
+# RUN VITE_API_URL=$VITE_API_URL VITE_API_BASE_URL=$VITE_API_BASE_URL pnpm build  # Se usar pnpm
 
 # Stage de produção
 FROM nginx:alpine AS production
@@ -101,6 +106,43 @@ EXPOSE 8080
 
 # Comando para iniciar em modo desenvolvimento
 CMD ["npm", "run", "dev"]
+```
+
+## ⚙️ Configuração do Vite (IMPORTANTE!)
+
+### **vite.config.ts com Variáveis de Ambiente**
+
+```typescript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 8080,
+  },
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  // 🔧 CONFIGURAÇÃO CRÍTICA para variáveis de ambiente
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL),
+    // Adicione outras variáveis conforme necessário
+  },
+}));
+```
+
+### **Variáveis de Ambiente Necessárias**
+
+```bash
+# Exemplo de variáveis que devem estar disponíveis
+VITE_API_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:3000/api
 ```
 
 ## 🌐 Configuração do Nginx
@@ -342,6 +384,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # 🔧 PASSAR VARIÁVEIS DE AMBIENTE PARA O BUILD
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     ports:
       - "82:82"  # Alterar para a porta desejada
     environment:
@@ -382,10 +428,13 @@ networks:
 
 ## 🚀 Comandos para Teste Local
 
-### **Build da Imagem**
+### **Build da Imagem com Variáveis**
 ```bash
-# Produção
-docker build -t meu-projeto-frontend .
+# Produção com variáveis de ambiente
+docker build \
+  --build-arg VITE_API_URL=http://localhost:3000 \
+  --build-arg VITE_API_BASE_URL=http://localhost:3000/api \
+  -t meu-projeto-frontend .
 
 # Desenvolvimento
 docker build -f Dockerfile.dev -t meu-projeto-frontend-dev .
@@ -415,34 +464,37 @@ docker-compose --profile dev up frontend-dev
 ```dockerfile
 COPY package*.json ./
 RUN npm ci
-RUN npm run build
+RUN VITE_API_URL=$VITE_API_URL VITE_API_BASE_URL=$VITE_API_BASE_URL npm run build
 ```
 
 ### **Yarn**
 ```dockerfile
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
-RUN yarn build
+RUN VITE_API_URL=$VITE_API_URL VITE_API_BASE_URL=$VITE_API_BASE_URL yarn build
 ```
 
 ### **pnpm**
 ```dockerfile
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
-RUN pnpm build
+RUN VITE_API_URL=$VITE_API_URL VITE_API_BASE_URL=$VITE_API_BASE_URL pnpm build
 ```
 
 ### **Bun**
 ```dockerfile
 COPY package.json bun.lockb ./
 RUN bun install
-RUN bun run build
+RUN VITE_API_URL=$VITE_API_URL VITE_API_BASE_URL=$VITE_API_BASE_URL bun run build
 ```
 
 ## 📝 Checklist de Verificação
 
 ### **Antes do Deploy**
 - [ ] Dockerfile está na raiz do projeto
+- [ ] **vite.config.ts tem configuração `define` para variáveis**
+- [ ] **Dockerfile tem ARGs para variáveis de ambiente**
+- [ ] **Build é feito com variáveis injetadas**
 - [ ] nginx.conf está configurado corretamente
 - [ ] .dockerignore está otimizado
 - [ ] Porta no nginx.conf corresponde ao EXPOSE
@@ -451,6 +503,7 @@ RUN bun run build
 
 ### **Durante o Deploy**
 - [ ] Build da imagem está funcionando
+- [ ] **Variáveis de ambiente estão sendo passadas corretamente**
 - [ ] Container está iniciando
 - [ ] Health check está passando
 - [ ] Aplicação está acessível
@@ -458,8 +511,9 @@ RUN bun run build
 
 ### **Após o Deploy**
 - [ ] Frontend está carregando
+- [ ] **Variáveis de ambiente estão sendo lidas corretamente**
+- [ ] **API está conectando (verificar console.log)**
 - [ ] Funcionalidades estão funcionando
-- [ ] API está conectando (se aplicável)
 - [ ] Performance está adequada
 
 ## 🚨 Troubleshooting Comum
@@ -476,17 +530,54 @@ RUN bun run build
 ### **Erro: "wget: not found"**
 **Solução**: Adicione `RUN apk add --no-cache wget` no Dockerfile
 
+### **Erro: "VITE_API_URL não configurado"**
+**Solução**: 
+1. Verifique se `vite.config.ts` tem a configuração `define`
+2. Verifique se `Dockerfile` tem ARGs para as variáveis
+3. Verifique se o build é feito com as variáveis injetadas
+4. Verifique se as variáveis estão sendo passadas no deploy
+
+### **Erro: "import.meta.env is undefined"**
+**Solução**: 
+1. Verifique se `vite.config.ts` tem a configuração `define` correta
+2. Verifique se as variáveis estão sendo passadas no build
+3. Verifique se o build está sendo feito corretamente
+
 ### **Build muito lento**
 **Solução**: Otimize o .dockerignore e use multi-stage build
 
 ## 🎯 Dicas de Otimização
 
 1. **Use multi-stage build** para reduzir tamanho da imagem final
-2. **Otimize o .dockerignore** para excluir arquivos desnecessários
-3. **Use Alpine Linux** para imagens menores
-4. **Configure cache adequado** no nginx para assets estáticos
-5. **Use health checks** para monitoramento automático
-6. **Configure logs** para facilitar debugging
+2. **Configure variáveis de ambiente corretamente** no vite.config.ts e Dockerfile
+3. **Otimize o .dockerignore** para excluir arquivos desnecessários
+4. **Use Alpine Linux** para imagens menores
+5. **Configure cache adequado** no nginx para assets estáticos
+6. **Use health checks** para monitoramento automático
+7. **Configure logs** para facilitar debugging
+
+## 🔧 Deploy na Coolify
+
+### **Configuração das Variáveis**
+1. **No Coolify**, configure as variáveis de ambiente:
+   - `VITE_API_URL`
+   - `VITE_API_BASE_URL`
+
+2. **Verifique** se o Dockerfile está recebendo as variáveis:
+   ```dockerfile
+   ARG VITE_API_URL
+   ARG VITE_API_BASE_URL
+   ```
+
+3. **Verifique** se o build está usando as variáveis:
+   ```dockerfile
+   RUN VITE_API_URL=$VITE_API_URL VITE_API_BASE_URL=$VITE_API_BASE_URL npm run build
+   ```
+
+### **Troubleshooting no Deploy**
+- **Force deploy** se as variáveis não estiverem funcionando
+- **Verifique logs** do build para confirmar se as variáveis estão sendo recebidas
+- **Teste localmente** com `docker build --build-arg` antes do deploy
 
 ## 📚 Recursos Adicionais
 
@@ -494,7 +585,10 @@ RUN bun run build
 - [Nginx Configuration](https://nginx.org/en/docs/)
 - [Vite Build](https://vitejs.dev/guide/build.html)
 - [React Deployment](https://create-react-app.dev/docs/deployment/)
+- [Vite Environment Variables](https://vitejs.dev/guide/env-and-mode.html)
 
 ---
 
-**🎉 Com este guia, você conseguirá criar Dockerfiles funcionais para qualquer projeto React/Vite!**
+**🎉 Com este guia atualizado, você conseguirá criar Dockerfiles funcionais com variáveis de ambiente para qualquer projeto React/Vite!**
+
+**🔧 Lembre-se: As variáveis de ambiente são CRÍTICAS para o funcionamento correto da aplicação!**
