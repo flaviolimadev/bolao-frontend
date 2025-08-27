@@ -1,17 +1,18 @@
 (function(){
-  // Permite override em runtime da URL da API, independentemente do build
-  // Coolify pode montar/gerar este arquivo com a variável correta
-  var url = (window && window.__VITE_API_URL) || '';
-  // Se o container definir ENV API_URL via Nginx, podemos ler por template
-  try {
-    // Caso o arquivo seja processado por envsubst, trocará ${VITE_API_URL}
-    var tpl = '${VITE_API_URL}';
-    if (tpl && tpl !== '${VITE_API_URL}') {
-      url = tpl;
-    }
-  } catch (e) {}
-  if (url) {
-    window.__VITE_API_URL = url;
-    try { localStorage.setItem('API_BASE_URL', url); } catch {}
+  // 🔧 FORÇAR URL DA API PARA RESOLVER O ERRO "VITE_API_URL não configurado"
+  var apiUrl = 'https://db-clientes-back-end.kl5dxx.easypanel.host';
+  
+  // Definir globalmente
+  window.__VITE_API_URL = apiUrl;
+  
+  // Salvar no localStorage como fallback
+  try { 
+    localStorage.setItem('API_BASE_URL', apiUrl); 
+    console.log('🔧 env.js: API_URL definida como', apiUrl);
+  } catch (e) {
+    console.warn('🔧 env.js: Erro ao salvar no localStorage:', e);
   }
+  
+  // Log para debug
+  console.log('🔧 env.js carregado com sucesso');
 })();
